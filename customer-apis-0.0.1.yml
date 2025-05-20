@@ -1,0 +1,1790 @@
+openapi: 3.0.0
+info:
+  title: Customer Interface API
+  description: Provides a set of secured endpoints to manage customer authentication and customer profile operations.
+  version: 1.0.0
+
+servers:
+  - url: https://sit.public.api-marketplace.alrajhibank.com.sa/apimarketplace-sit/api-marketplace-public-sit/api/v1/customer/customers
+    description: Base API Path
+security:
+  - OAuth2Security: # 🔹 Require Authorization header
+    - e-commerce
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Customer Authentication
+      summary: Generate access and refresh tokens
+      operationId: loginUser
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/TenantId'
+      description: |
+        Authenticates a user using a **customer data** & **sessionId** and generates:
+          - An **access token** (short-lived, used for API access)
+          - A **refresh token** (longer-lived, used to get a new access token)
+      requestBody:
+        required: true
+        content:
+          application/jwe:
+            schema:
+              # $ref: '#/components/schemas/CustomerLoginRequest'
+              allOf:
+                - $ref: '#/components/schemas/Jwe'
+                - type: object
+                  properties:
+                    message:
+                      $ref: '#/components/schemas/CustomerLoginRequest'
+      responses:
+        '200':
+          description: Token generated successfully
+          headers:
+            x-request-id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                      $ref: '#/components/schemas/TokenResponse'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+        '401':
+          description: Unauthorized - Invalid credentials
+  /auth/logout:
+    post:
+      tags:
+        - Customer Authentication
+      summary: Invalidate access token
+      operationId: logoutUser
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '204':
+          description: Token Invalidated Successfully
+          headers:
+            x-request-id:
+              schema:
+                type: string
+        '400':
+          description: Invalid request, token required
+        '401':
+          description: Unauthorized - Invalid credentials
+  
+  ### 🙋‍♂️ Customer Management API ###
+  /:
+    post:
+      tags:
+        - Customers
+      summary: Create Customer
+      operationId: CreateCustomer
+      description: This path is used to create a new Customer.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+        description: Create customer request payload
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201CreateCustomer'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    get:
+      tags:
+        - Customers
+      summary: Get Customer By ID
+      operationId: GetCustomerID
+      description: This path is used to retrieve Customer Details.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/TenantId'   
+      responses:
+        '200':
+          $ref: '#/components/responses/200ListCustomers'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    put:
+      tags:
+        - Customers
+      summary: Update Customer
+      operationId: UpdateCustomer
+      description: This path is used to update a specific Customer details.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+        description: Update customer request payload
+        required: false
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /addresses:
+    post:
+      tags:
+        - Customers Addresses
+      summary: Create Customer Addresses
+      operationId: CreateCustomerAddresses
+      description: This path is used to create a new Customer Addresses.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/customerToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerAddressesRequest'
+        description: Create customer addresses request payload
+        required: true
+      responses:
+        '201':
+          $ref: '#/components/responses/201CreateCustomerAddresses'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    get:
+      tags:
+        - Customers Addresses
+      summary: List Customer Addresses
+      operationId: ListCustomerAddresses
+      description: This path is used to retrieve the list of Customer Addresses.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/mobileNumber'
+        - $ref: '#/components/parameters/street'
+        - $ref: '#/components/parameters/countryCode'
+        - $ref: '#/components/parameters/cityCode'
+        - $ref: '#/components/parameters/postalCode'
+      responses:
+        '200':
+          $ref: '#/components/responses/200GetCustomerAddresses'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+  /addresses/bulk:
+    put:
+      tags:
+        - Customers Addresses
+      summary: Update Customer Addresses
+      operationId: UpdateCustomerAddressesBulk
+      description: This path is used to Update Customer Addresses.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/customerToken'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerAddressesBulkRequest'
+        description: Create customer addresses request payload
+        required: true
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    
+  /addresses/{addressId}:
+    get:
+      tags:
+        - Customers Addresses
+      summary: Get Customers Address Detials
+      operationId: GetCustomersAddressDetials
+      description: This path is used to retrieve the Customers Address.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/AddressId'
+      responses:
+        '200':
+          $ref: '#/components/responses/200ListCustomersAddresses'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    put:
+      tags:
+        - Customers Addresses
+      summary: Update Customer Addresses
+      operationId: UpdateCustomerAddresses
+      description: This path is used to update a specific Customer Addresses details.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/AddressId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerAddressesRequest'
+        description: Update customer addresses request payload
+        required: false
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+    delete:
+      tags:
+        - Customers Addresses
+      summary: Delete Customer Address
+      operationId: DeleteCustomerAddress
+      description: This path is used to delete a Customer specific Addresses.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/x-request-id'
+        - $ref: '#/components/parameters/customerToken'
+        - $ref: '#/components/parameters/TenantId'
+        - $ref: '#/components/parameters/AddressId'
+      responses:
+        '204':
+          $ref: '#/components/responses/204NoContent'
+        '400':
+          $ref: '#/components/responses/400Error'
+        '500':
+          $ref: '#/components/responses/500Error'
+
+
+components:
+  responses:
+    201CreateCustomer:
+      description: Customer Created
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateCustomerResponse'
+    200ListCustomers:
+      description: List Customers
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListCustomersResponse'
+    200GetCustomer:
+      description: Get Customer
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetCustomerResponse'
+    200UpdateCustomer:
+      description: Customer Updated
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateCustomerResponse'
+    201CreateCustomerAddresses:
+      description: Customer Addresses Created
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateCustomerAddressesResponse'
+    200ListCustomersAddresses:
+      description: List Customers Addresses
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ListCustomersAddressesResponse'
+    200GetCustomerAddresses:
+      description: Get Customer Addresses
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetCustomerAddressesResponse'
+    200UpdateCustomerAddresses:
+      description: Customer Addresses Updated
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateCustomerAddressesResponse'
+    204NoContent:
+      description: No Content
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+          example: 49df2c2c-6b80-40ee-96a1-71910a248048
+    400Error:
+      description: Bad request
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+      content:
+        application/json; charset=utf-8:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errors:
+              - code: E100099
+                message: Tenant ID is mandatory
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errors:
+              - code: E100099
+                message: Tenant ID is mandatory
+    500Error:
+      description: Internal Server Error
+      headers:
+        x-request-id:
+          description: An RFC4122 UID used as a correlation id.
+          required: true
+          schema:
+            type: string
+      content:
+        application/json; charset=utf-8:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errors:
+              - code: E999999
+                message: Internal Error
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errors:
+              - code: E999999
+                message: Internal Error
+  schemas:
+    ############################################
+    # Request Objects
+    ############################################
+    CustomerLoginRequest:
+      type: object
+      properties:
+        channelSessionDetails:
+          type: object
+          required: 
+            - channelSessionId
+            - userSessionOS
+          properties:
+            channelSessionId:
+              type: string
+              description: session of the user
+            channelUserId:
+              type: string
+              description: Username of the user
+            userSessionLanguage:
+              $ref: "#/components/schemas/userSessionLanguage"
+            userSessionOS:
+              $ref: "#/components/schemas/operatingSystem"
+            otpMethod:
+              type: string
+              description: The method used for OTP delivery.
+        customerDetails:
+          type: object
+          required:
+            - customerCode
+          properties:
+            customerCode:
+              $ref: '#/components/schemas/customerCode'
+            firstNameEnglish:
+              $ref: '#/components/schemas/firstNameEnglish'
+            firstNameArabic:
+              $ref: '#/components/schemas/firstNameArabic'
+            lastNameEnglish:
+              $ref: '#/components/schemas/lastNameEnglish'
+            lastNameArabic:
+              $ref: '#/components/schemas/lastNameArabic'
+            mobileNumber:
+              $ref: '#/components/schemas/mobileNumber'
+            email:
+              $ref: '#/components/schemas/email'
+            poiNumber:
+              $ref: '#/components/schemas/poiNumber'
+            poiType:
+              $ref: '#/components/schemas/poiType'
+    CreateCustomerRequest:
+      title: CreateCustomerRequest
+      type: object
+      required:
+        - firstNameEnglish
+        - firstNameArabic
+        - secondNameEnglish
+        - secondNameArabic
+        - lastNameEnglish
+        - lastNameArabic
+        - customerCode
+        - email
+        - channelUserId
+        - mobileNumber
+        - poiNumber
+        - poiType
+      properties:
+        firstNameEnglish:
+          $ref: '#/components/schemas/firstNameEnglish'
+        firstNameArabic:
+          $ref: '#/components/schemas/firstNameArabic'  
+        secondNameEnglish:
+          $ref: '#/components/schemas/secondNameEnglish'
+        secondNameArabic:
+          $ref: '#/components/schemas/secondNameArabic'
+        lastNameEnglish:
+          $ref: '#/components/schemas/lastNameEnglish'
+        lastNameArabic:
+          $ref: '#/components/schemas/lastNameArabic'
+        customerCode:
+          $ref: '#/components/schemas/customerCode'
+        email:
+          $ref: '#/components/schemas/email'
+        status:
+          $ref: '#/components/schemas/customerStatus'
+        mobileNumber:
+          $ref: '#/components/schemas/mobileNumber'
+        enabled:
+          $ref: '#/components/schemas/enabled'
+        channelUserId:
+          $ref: '#/components/schemas/channelUserId'
+        poiNumber:
+          $ref: '#/components/schemas/poiNumber'
+        poiType:
+          $ref: '#/components/schemas/poiType'
+
+    UpdateCustomerRequest:
+      title: UpdateCustomerRequest
+      type: object
+      properties:
+        firstNameEnglish:
+          $ref: '#/components/schemas/firstNameEnglish'
+        firstNameArabic:
+          $ref: '#/components/schemas/firstNameArabic'  
+        secondNameEnglish:
+          $ref: '#/components/schemas/secondNameEnglish'
+        secondNameArabic:
+          $ref: '#/components/schemas/secondNameArabic'
+        lastNameEnglish:
+          $ref: '#/components/schemas/lastNameEnglish'
+        lastNameArabic:
+          $ref: '#/components/schemas/lastNameArabic'
+        email:
+          $ref: '#/components/schemas/email'
+        # status:
+        #   $ref: '#/components/schemas/customerStatus'
+        mobileNumber:
+          $ref: '#/components/schemas/mobileNumber'
+        # enabled:
+        #   $ref: '#/components/schemas/enabled'
+        # channelUserId:
+        #   $ref: '#/components/schemas/channelUserId'
+        # poiNumber:
+        #   $ref: '#/components/schemas/poiNumber'
+        # poiType:
+        #   $ref: '#/components/schemas/poiType'
+    CreateCustomerAddressesBulkRequest:
+          type: array
+          items:
+            $ref: '#/components/schemas/updateAddressSchema'
+    CreateCustomerAddressesRequest:
+      title: CreateCustomerAddressesRequest
+      type: object
+      required:
+        - addressName
+        - mobileNumber
+        - street
+        - buildingNumber
+        - manufactureCountryCode
+        - cityCode
+        - status
+      properties:
+        customerId:
+          $ref: '#/components/schemas/customerId'
+        addressName:
+          $ref: '#/components/schemas/addressName'
+        mobileNumber:
+          $ref: '#/components/schemas/mobileNumber'
+        street:
+          $ref: '#/components/schemas/street'
+        buildingNumber:
+          $ref: '#/components/schemas/buildingNumber'
+        countryCode:
+          $ref: '#/components/schemas/countryCode'
+        # countryName:
+        #   title: countryName
+        #   description: >-
+        #     Specifies the address country name
+        #   type: string
+        cityCode:
+          $ref: '#/components/schemas/cityCode'
+        # cityName:
+        #   title: city name
+        #   description: >-
+        #     Specifies the address city name
+        #   type: string
+        districtCode:
+          title: districtCode
+          description: >-
+            Specifies the address district code
+          type: string
+        areaName:
+          $ref: '#/components/schemas/areaName'
+        provinceName:
+          $ref: '#/components/schemas/provinceName'
+        nearestLandmark:
+          $ref: '#/components/schemas/nearestLandmark'
+        addressType:
+          $ref: '#/components/schemas/addressType'
+        # billToName:
+        #   $ref: '#/components/schemas/billToName'
+        # shipToName:
+        #   $ref: '#/components/schemas/shipToName'
+        status:
+          $ref: '#/components/schemas/shippingAddressStatus'
+        postalCode:
+          title: postalCode
+          description: >-
+            Specifies the address postal code
+          type: string
+        isDefaultAddress:
+          $ref: '#/components/schemas/isDefaultAddress'
+        latitude:
+          $ref: '#/components/schemas/latitude'
+        longitude:
+          $ref: '#/components/schemas/longitude'
+    UpdateCustomerAddressesRequest:
+      title: UpdateCustomerAddressesRequest
+      type: object
+      properties:
+        addressName:
+          title: addressName
+          description: >-
+            Specifies the address name
+          type: string
+        mobileNumber:
+          title: mobileNumber
+          description: >-
+            Specifies the mobile number of the customer
+        street:
+          title: street
+          description: >-
+            Specifies the address street name
+          type: string
+        buildingNumber:
+          title: buildingNumber
+          description: >-
+            Specifies the address building number
+          type: string
+        countryCode:
+          title: countryCode
+          description: >-
+            Specifies the address country code
+          type: string
+        # countryName:
+        #   title: countryName
+        #   description: >-
+        #     Specifies the address country name
+        #   type: string
+        cityCode:
+          title: cityCode
+          description: >-
+            Specifies the address city code
+          type: string
+        # cityName:
+        #   title: city name
+        #   description: >-
+        #     Specifies the address city name
+        #   type: string
+        districtCode:
+          title: districtCode
+          description: >-
+            Specifies the address district code
+          type: string
+        areaName:
+          title: areaName
+          description: >-
+            Specifies the address area name
+          type: string
+        provinceName:
+          title: provinceName
+          description: >-
+            Specifies the address province name
+          type: string
+        nearestLandmark:
+          title: nearestLandmark
+          description: >-
+            Specifies the address nearest landmark
+          type: string
+        addressType:
+          title: addressType
+          description: >-
+            Specifies the address type
+          type: string
+        # billToName:
+        #   $ref: '#/components/schemas/billToName'
+        # shipToName:
+        #   $ref: '#/components/schemas/shipToName'
+        status:
+          $ref: '#/components/schemas/shippingAddressStatus'
+        postalCode:
+          title: postalCode
+          description: >-
+            Specifies the address postal code
+          type: string
+        isDefaultAddress:
+          title: isDefaultAddress
+          description: >-
+            Specifies whether this address is the default one or not
+          type: string
+        latitude:
+          title: latitude
+          description: >-
+            Specifies the latitude of the source location
+          type: string
+        longitude:
+          title: longitude
+          description: >-
+            Specifies the longitude source location
+          type: string
+    ############################################
+    # Response Objects
+    ############################################
+    ErrorResponse:
+      description: >-
+        An array of detail error codes, and messages, and URLs to documentation
+        to help remediation.
+      type: object
+      properties:
+        errors:
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+      required:
+        - errors
+      additionalProperties: false
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token for authentication
+        accessTokenExpiresIn:
+          type: integer
+          description: Expiry time in seconds for access token
+        refreshToken:
+          type: string
+          description: JWT refresh token for getting new access token
+        refreshTokenExpiresIn:
+          type: integer
+          description: Expiry time in seconds for refresh token
+    CreateCustomerResponse:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          $ref: '#/components/schemas/customerID'
+    ListCustomersResponse:
+        $ref: '#/components/schemas/customerSchema'
+    GetCustomerResponse:
+      $ref: '#/components/schemas/customerSchema'
+    UpdateCustomerResponse:
+      $ref: '#/components/schemas/customerSchema'
+    CreateCustomerAddressesResponse:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          description: (encrypted) Unique identifier of the customer address
+    ListCustomersAddressesResponse:
+        $ref: '#/components/schemas/addressSchema'
+    GetCustomerAddressesResponse:
+      title: ListCustomerAddressesResponse
+      type: array
+      items:
+        $ref: '#/components/schemas/addressSchema'
+    UpdateCustomerAddressesResponse:
+      title: ListCustomerAddressesResponse
+      type: array
+      items:
+        $ref: '#/components/schemas/addressSchema'
+    ############################################
+    # General Objects Definitions
+    ############################################
+    Error:
+      required:
+        - Code
+        - Message
+      type: object
+      properties:
+        Code:
+          type: string
+          description: Low level textual error code, e.g., ERROR.400.001
+          example: ERROR.400.001
+        Message:
+          maxLength: 500
+          minLength: 1
+          type: string
+          description: >-
+            A description of the error that occurred. e.g., 'A mandatory field
+            isn't supplied' or 'RequestedExecutionDateTime must be in future'
+            OBIE doesn't standardise this field
+          example: Instructed identification is missing
+        Path:
+          maxLength: 500
+          minLength: 1
+          type: string
+          description: >-
+            Recommended but optional reference to the JSON Path of the field
+            with error, e.g., Data.Initiation.InstructedAmount.Currency
+          example: Data.Initiation.InstructionIdentification
+        Url:
+          type: string
+          description: >-
+            URL to help remediate the problem, or provide more information, or
+            to API Reference, or help etc
+          example:
+    Jwe:
+        title: 'Jwe'
+        description: |
+          [https://www.rfc-editor.org/rfc/rfc7519](https://www.rfc-editor.org/rfc/rfc7519)
+        type: 'object'
+        properties:
+          iss:
+            description: |
+              [https://www.rfc-editor.org/rfc/rfc7519#section-4.1.1](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.1)          
+            type: string
+          exp:
+            description: |
+              [https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.4)          
+            type: number
+          nbf:
+            description: |
+              [https://www.rfc-editor.org/rfc/rfc7519#section-4.1.5](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.5)          
+            type: number
+          aud:
+            description: |
+              [https://www.rfc-editor.org/rfc/rfc7519#section-4.1.3](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.3)          
+            type: array
+            items:
+              type: string
+          iat:
+            description: |
+              [https://www.rfc-editor.org/rfc/rfc7519#section-4.1.6](https://www.rfc-editor.org/rfc/rfc7519#section-4.1.6)          
+            type: number
+        required: [ iss, exp, nbf ]
+
+
+    customerSchema:
+      title: customerSchema
+      description: >-
+        Specifies the customer schema
+      type: object
+      required:
+        - id
+        - customerCode
+        - firstNameEnglish
+        - firstNameArabic
+        - secondNameEnglish
+        - secondNameArabic
+        - email
+        - status
+        - mobileNumber
+        - enabled
+        - channelUserId
+      properties:
+        id:
+          $ref: '#/components/schemas/customerID'
+        customerCode:
+          $ref: '#/components/schemas/customerCode'
+        firstNameEnglish:
+          $ref: '#/components/schemas/firstNameEnglish'
+        firstNameArabic:
+          $ref: '#/components/schemas/firstNameArabic'  
+        secondNameEnglish:
+          $ref: '#/components/schemas/secondNameEnglish'
+        secondNameArabic:
+          $ref: '#/components/schemas/secondNameArabic'
+        lastNameEnglish:
+          $ref: '#/components/schemas/lastNameEnglish'
+        lastNameArabic:
+          $ref: '#/components/schemas/lastNameArabic'
+        email:
+          $ref: '#/components/schemas/email'
+        status:
+          $ref: '#/components/schemas/customerStatus'
+        mobileNumber:
+          $ref: '#/components/schemas/mobileNumber'
+        enabled:
+          $ref: '#/components/schemas/enabled'
+        channelUserId:
+          $ref: '#/components/schemas/channelUserId'
+        poiNumber:
+          $ref: '#/components/schemas/poiNumber'
+        poiType:
+          $ref: '#/components/schemas/poiType'
+        language:
+          $ref: '#/components/schemas/language'
+      
+    addressSchema:
+      title: addressSchema
+      description: >-
+        Specifies the address details
+      type: object
+      required:
+        - id
+        - customerId
+        - addressName
+        - mobileNumber
+        - street
+        - buildingNumber
+        - countryCode
+        - cityCode
+        - status
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        customerId:
+          $ref: '#/components/schemas/customerId'
+        addressName:
+          $ref: '#/components/schemas/addressName'
+        mobileNumber:
+          $ref: '#/components/schemas/mobileNumber'
+        street:
+          $ref: '#/components/schemas/street'
+        buildingNumber:
+          $ref: '#/components/schemas/buildingNumber'
+        countryCode:
+          $ref: '#/components/schemas/countryCode'
+        # countryName:
+        #   title: countryName
+        #   description: >-
+        #     Specifies the address country name
+        #   type: string
+        cityCode:
+          $ref: '#/components/schemas/cityCode'
+        # cityName:
+        #   title: city name
+        #   description: >-
+        #     Specifies the address city name
+        #   type: string
+        districtCode:
+          title: districtCode
+          description: >-
+            Specifies the address district code
+          type: string
+        areaName:
+          $ref: '#/components/schemas/areaName'
+        provinceName:
+          $ref: '#/components/schemas/provinceName'
+        nearestLandmark:
+          $ref: '#/components/schemas/nearestLandmark'
+        addressType:
+          $ref: '#/components/schemas/addressType'
+        # billToName:
+        #   $ref: '#/components/schemas/billToName'
+        # shipToName:
+        #   $ref: '#/components/schemas/shipToName'
+        status:
+          $ref: '#/components/schemas/shippingAddressStatus'
+        postalCode:
+          title: postalCode
+          description: >-
+            Specifies the address postal code
+          type: string
+        isDefaultAddress:
+          $ref: '#/components/schemas/isDefaultAddress'
+        latitude:
+          $ref: '#/components/schemas/latitude'
+        longitude:
+          $ref: '#/components/schemas/longitude'
+    updateAddressSchema:
+      title: addressSchema
+      description: >-
+        Specifies the address details
+      type: object
+      properties:
+        id:
+          type: string
+          description: (encrypted) Unique identifier of the address
+        addressName:
+          title: addressName
+          description: >-
+            Specifies the address name
+          type: string
+        mobileNumber:
+          title: mobileNumber
+          description: >-
+            Specifies the mobile number of the customer
+        street:
+          title: street
+          description: >-
+            Specifies the address street name
+          type: string
+        buildingNumber:
+          title: buildingNumber
+          description: >-
+            Specifies the address building number
+          type: string
+        countryCode:
+          title: countryCode
+          description: >-
+            Specifies the address country code
+          type: string
+        # countryName:
+        #   title: countryName
+        #   description: >-
+        #     Specifies the address country name
+        #   type: string
+        cityCode:
+          title: cityCode
+          description: >-
+            Specifies the address city code
+          type: string
+        # cityName:
+        #   title: city name
+        #   description: >-
+        #     Specifies the address city name
+        #   type: string
+        districtCode:
+          title: districtCode
+          description: >-
+            Specifies the address district code
+          type: string
+        areaName:
+          title: areaName
+          description: >-
+            Specifies the address area name
+          type: string
+        provinceName:
+          title: provinceName
+          description: >-
+            Specifies the address province name
+          type: string
+        nearestLandmark:
+          title: nearestLandmark
+          description: >-
+            Specifies the address nearest landmark
+          type: string
+        addressType:
+          $ref: '#/components/schemas/addressType'
+        # billToName:
+        #   $ref: '#/components/schemas/billToName'
+        # shipToName:
+        #   $ref: '#/components/schemas/shipToName'
+        status:
+          $ref: '#/components/schemas/shippingAddressStatus'
+        postalCode:
+          title: postalCode
+          description: >-
+            Specifies the address postal code
+          type: string
+        isDefaultAddress:
+          title: isDefaultAddress
+          description: >-
+            Specifies whether this address is the default one or not
+          type: string
+        latitude:
+          title: latitude
+          description: >-
+            Specifies the latitude of the source location
+          type: string
+        longitude:
+          title: longitude
+          description: >-
+            Specifies the longitude source location
+          type: string
+    ############################################
+    # Simple Definitions
+    ############################################
+    # 🔹 Reusable Field Definitions
+
+    id:
+      type: string
+      description: (encrypted) Unique identifier
+    customerID:
+      title: customerId
+      description: >-
+        (encrypted)  Unique ID of the customer
+      type: string
+    customerCode:
+      title: customerCode
+      description: >-
+        Specifies the business identifier of the customer
+      type: string
+    firstNameEnglish:
+      title: firstNameEnglish
+      description: >-
+        Specifies the english first name of the customer
+      type: string
+    firstNameArabic:
+      title: firstNameArabic
+      description: >-
+        Specifies the arabic first name of the customer
+      type: string
+    secondNameEnglish:
+      title: secondNameEnglish
+      description: >-
+        Specifies the english second name of the customer
+      type: string
+    secondNameArabic:
+      title: secondNameArabic
+      description: >-
+        Specifies the arabic second name of the customer
+      type: string
+    lastNameEnglish:
+      title: lastNameEnglish
+      description: >-
+        Specifies the english last name of the customer
+      type: string
+    lastNameArabic:
+      title: lastNameArabic
+      description: >-
+        Specifies the arabic last name of the customer
+      type: string
+    email:
+      title: email
+      description: >-
+        Specifies the email of the customer
+      type: string
+    customerStatus:
+      title: status
+      description: >-
+        Specifies the status of the customer
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+        - HOLD
+        - DISABLED
+        - DELETED
+    mobileNumber:
+      title: mobileNumber
+      description: >-
+        Specifies the mobile number of the customer
+    enabled:
+      title: enabled
+      description: >-
+        Specifies whether this customer is enabled or not
+      type: boolean
+    channelUserId:
+      title: channelUserId
+      description: Corporate User channelUserId
+      type: string
+    addressName:
+      title: addressName
+      description: >-
+        Specifies the address name
+      type: string
+    street:
+      title: street
+      description: >-
+        Specifies the address street name
+      type: string
+    buildingNumber:
+      title: buildingNumber
+      description: >-
+        Specifies the address building number
+      type: string
+    countryCode:
+      title: countryCode
+      description: >-
+        Specifies the address country code
+      type: string
+    countryName:
+      title: countryName
+      description: >-
+        Specifies the address country name
+      type: string
+    cityCode:
+      title: cityCode
+      description: >-
+        Specifies the address city code
+      type: string
+    cityName:
+      title: city name
+      description: >-
+        Specifies the address city name
+      type: string
+    areaName:
+      title: areaName
+      description: >-
+        Specifies the address area name
+      type: string
+    provinceName:
+      title: provinceName
+      description: >-
+        Specifies the address province name
+      type: string
+    nearestLandmark:
+      title: nearestLandmark
+      description: >-
+        Specifies the address nearest landmark
+      type: string
+    addressType:
+      title: addressType
+      description: >-
+        Specifies the address type
+      type: string
+      enum:
+        - HOME
+        - WORK
+        - OTHERS
+    addressStatus:
+      title: status
+      description: >-
+        Specifies the address status
+      type: string
+    isDefaultAddress:
+      title: isDefaultAddress
+      description: >-
+        Specifies whether this address is the default one or not
+      type: string
+    latitude:
+      title: latitude
+      description: >-
+        Specifies the latitude of the source location
+      type: string
+    longitude:
+      title: longitude
+      description: >-
+        Specifies the longitude source location
+      type: string
+    deductionAmount:
+      title: deductionAmount
+      description: >-
+        The amount to be deducted from the total price.
+      type: number
+      example: 35.2
+    numberOfPoints:
+      type: string
+      description: number of loyalty points.
+    city:
+      type: string
+      description: City name.
+      example: 'Riyadh'
+    districts:
+      type: array
+      description: List of districts in the city.
+      items:
+        type: string
+      example: ['Al Malaz', 'Al Olaya', 'King Fahd District']
+    fileName:
+      type: string
+      example: 'transactions.csv'
+      description: Name of the file.
+    fileContent:
+      type: string
+      format: byte
+      description: Base64-encoded CSV.
+    batchId:
+      type: string
+      description: Batch ID of the reconciliation process.
+    poiNumber:
+      type: string
+      description: Customer (encrypted) Unique identifier
+    poiType:
+      type: string
+      description: Customer (encrypted) Unique identifier type
+      enum:
+        - IQA
+        - NAT
+        - CRN
+    language:
+      type: string
+      description: The language code (e.g., 'en' for English, 'ar' for Arabic, 'fr' for French).
+    userSessionLanguage:
+      type: string
+      description: The userSessionLanguage code (e.g., 'en' for English, 'ar' for Arabic, 'fr' for French).
+
+    operatingSystem:
+      type: string
+      description: The operating system of the device.
+    # 🔹 ENUMS
+
+    customerId:
+      type: string
+      description: (Encrypted) Identifier of the customer placing the order.
+ 
+    shippingAddressStatus:
+      title: status
+      description: >-
+        Specifies the address status
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+ 
+  parameters:
+    x-request-id:
+      in: header
+      name: x-request-id
+      required: false
+      description: An RFC4122 UID used as a correlation id.
+      schema:
+        type: string
+    deleted:
+      in: query
+      name: deleted
+      required: false
+      schema:
+        type: boolean
+        example: false
+    filterable:
+      in: query
+      name: filterable
+      required: false
+      schema:
+        type: boolean
+        example: false
+    DepartmentId:
+      in: header
+      name: departmentId
+      required: true
+      description: (encrypted) The department Id
+      schema:
+        type: string
+    DepartmentID:
+      in: header
+      name: departmentId
+      required: false
+      description: (encrypted) The department Id
+      schema:
+        type: string
+    departmentId:
+      in: query
+      name: departmentId
+      required: false
+      description: The department Id
+      schema:
+        type: string
+    mobileNumber:
+      in: query
+      name: mobileNumber
+      required: false
+      description: The address mobile number
+      schema:
+        type: string
+    street:
+      in: query
+      name: street
+      required: false
+      description: The address street
+      schema:
+        type: string
+    countryCode:
+      in: query
+      name: countryCode
+      required: false
+      description: The address country code
+      schema:
+        type: string
+    cityCode:
+      in: query
+      name: cityCode
+      required: false
+      description: The address city code
+      schema:
+        type: string
+    postalCode:
+      in: query
+      name: postalCode
+      required: false
+      description: The address postal code
+      schema:
+        type: string
+    TenantId:
+      in: header
+      name: tenantId
+      required: true
+      description: The tenant id
+      schema:
+        type: string
+    Authorization:
+      in: header
+      name: Authorization
+      required: true
+      description: |
+        OAuth 2.0 Bearer Token for authentication and tenant identification.
+        Provide a valid access token in the format: `Bearer <token>`.
+      schema:
+        type: string
+        example: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    PaymentId:
+      in: path
+      name: paymentId
+      required: true
+      description: The payment id
+      schema:
+        type: string
+    merchantId:
+      name: merchantId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 'CUST12345'
+      description: (encrypted) Unique identifier of the merchant
+    MerchantId:
+      name: merchantId
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'CUST12345'
+      description: (encrypted) Unique identifier of the merchant
+    maxPrice:
+      in: query
+      name: maxPrice
+      schema:
+        type: number
+        format: float
+      description: 'Maximum price filter'
+    CustomerId:
+      name: customerCode
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'CUST12345'
+      description: (encrypted) Unique identifier of the customer who placed the order
+    OrderCustomerId:
+      name: customerCode
+      in: query
+      required: true
+      schema:
+        type: string
+        example: 'CUST12345'
+      description: (encrypted) Unique identifier of the customer who placed the order
+    CustomerID:
+      name: customerCode
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 'CUST12345'
+      description: (encrypted) Unique identifier of the customer.
+    AddressId:
+      name: addressId
+      in: path
+      required: true
+      schema:
+        type: string
+        example: 'CUST12345'
+      description: (encrypted) Unique identifier of the address
+    OrderType:
+      name: orderType
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'ONLINE'
+        enum:
+        - ONLINE
+        - IN_STORE
+        - PRE_ORDER
+      description: Type of the order
+    Status:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'CONFIRMED'
+        enum:
+          - PENDING
+          - PAID
+          - ORDER_IN_PROGRESS
+          - SHIPPED
+          - OUT_FOR_DELIVERY
+          - DELIVERED
+          - CANCELLED
+      description: Status of the order (e.g., pending, shipped, cancelled)
+    PaymentMethod:
+      name: paymentMethod
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'bankAccount'
+      description: Payment method used for the order
+    Channel:
+      name: channel
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Sales channel through which the order was placed
+    IsPreOrder:
+      name: isPreOrder
+      in: query
+      required: false
+      schema:
+        type: boolean
+        example: true
+      description: Indicates if the order is a pre-order
+    IsBackOrder:
+      name: isBackOrder
+      in: query
+      required: false
+      schema:
+        type: boolean
+        example: false
+      description: Indicates if the order is a backorder
+    CreatedFromDate:
+      name: createdFromDate
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+        example: '2024-01-01T00:00:00Z'
+      description: Start date for filtering orders by creation date (ISO 8601 format)
+    CreatedToDate:
+      name: createdToDate
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+        example: '2024-02-01T23:59:59Z'
+      description: End date for filtering orders by creation date (ISO 8601 format)
+    HoldFromDate:
+      name: holdFromDate
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+        example: '2024-01-15T00:00:00Z'
+      description: Start date for filtering orders placed on hold (ISO 8601 format)
+    HoldToDate:
+      name: holdToDate
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date-time
+        example: '2024-01-31T23:59:59Z'
+      description: End date for filtering orders placed on hold (ISO 8601 format)
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        example: 1
+        default: 1
+      description: The page number to retrieve (starts from 1). Defaults to 1 
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        example: 10
+        default: 60
+      description: The number of items to return per page. Defaults to 60
+    CityCode:
+      name: cityCode
+      in: query
+      required: false
+      schema:
+        type: integer
+        example: 1
+      description: Specifies the address city code
+    actorId:
+      name: actorId
+      in: header
+      description: Actor (encrypted) Unique identifier
+      required: true
+      schema:
+        type: string
+    customerCode:
+      name: customerCode
+      in: path
+      description: Customer Identifier
+      required: true
+      schema:
+        type: string
+        example: '226928827241365060738212769455'
+    CatalogueId:
+      in: query
+      name: catalogueId
+      required: false
+      description: The Catalogue Id
+      schema:
+        type: string
+    CategoryId:
+      in: query
+      name: categoryId
+      required: true
+      description: The Category Id
+      schema:
+        type: string
+    EnglishName:
+      name: englishName
+      in: query
+      required: false
+      schema:
+        type: string
+    ArabicName:
+      name: arabicName
+      in: query
+      required: false
+      schema:
+        type: string
+    Enabled:
+      name: enabled
+      in: query
+      required: false
+      schema:
+        type: boolean
+        example: true
+    SubcategoryId:
+      in: query
+      name: subcategoryId
+      required: true
+      description: The Subcategory Id
+      schema:
+        type: string
+    subcategoryId:
+      in: query
+      name: subcategoryId
+      required: false
+      description: The Subcategory Id
+      schema:
+        type: string
+    BrandId:
+      in: path
+      name: brandId
+      required: true
+      description: The Brand Id
+      schema:
+        type: string
+    ProductOfferingId:
+      in: path
+      name: productOfferingId
+      required: true
+      description: The Product Offering Id
+      schema:
+        type: string
+    skuId:
+      in: query
+      name: sku
+      schema:
+        type: string
+      description: 'Filter by SKU'
+    minPrice:
+      in: query
+      name: minPrice
+      schema:
+        type: number
+        format: float
+      description: 'Minimum price filter'
+    ProductId:
+      in: query
+      name: productId
+      required: false
+      description: The Product Id Id
+      schema:
+        type: string
+    AttributeId:
+      in: path
+      name: attributeId
+      required: true
+      description: The Attribute Id
+      schema:
+        type: string
+    AttributeSetId:
+      in: path
+      name: attributeSetId
+      required: true
+      description: The Attribute Set Id
+      schema:
+        type: string
+    customerToken:
+      in: header
+      name: customerToken
+      required: true
+      description: A Customer Token as per https://tools.ietf.org/html/rfc6750
+      schema:
+        type: string
+    SearchCriteria:
+      name: searchCriteria
+      in: query
+      required: false
+      schema:
+        type: string
+        format: byte
+      example:
+        ICAgICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAgInN1YmNhdGVnb3J5SWQiOiAiMTIzIiwKICAgICAgICAgICAgICAgICAiYnJhbmRJZHMiOiBbIjEiLCAiMiJdLAogICAgICAgICAgICAgICAgICJwcm9kdWN0R3JvdXBJZCI6ICIxMjMiLAogICAgICAgICAgICAgICAgICJwcm9kdWN0TmFtZSI6ICJQcm9kdWN0IEEiLAogICAgICAgICAgICAgICAgICJicmFuZE5hbWUiOiAiQnJhbmQgWCIsCiAgICAgICAgICAgICAgICAgImZyZWVUZXh0IjogInNvbWUgdGV4dCIsCiAgICAgICAgICAgICAgICAgImF0dHJpYnV0ZXMiOiBbCiAgICAgICAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICAgImF0dHJpYnV0ZUlkIjogIjEiLAogICAgICAgICAgICAgICAgICAiYXR0cmlidXRlVmFsdWVzIjogWyJyZWQiLCJibGFjayJdCiAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIF0KICAgICAgICAgICAgICAgfQ==
+      description: |
+            A **Base64-encoded JSON** representation of the search criteria object. 
+
+            **decoded base64:** ==> 
+              {
+                 "subcategoryId": "123",
+                 "categoryIds": ["123"],
+                 "brandIds": ["1", "2"],
+                 "merchantTentantId": "123",
+                 "isTopProduct": true,
+                 "priceFrom": 100,
+                 "priceTo": 200,
+                 "productGroupId": "123",
+                 "productName": "Product A",
+                 "productStatus": "IN_STOCK",
+                 "brandName": "Brand X",
+                 "freeText": "some text",
+                 "attributes": [
+                  {
+                  "attributeId": "1",
+                  "attributeValues": ["red","black"]
+                  }
+                ]
+               }
+    SortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'price'
+        enum:
+          - price
+          - name
+          - createdAt
+          - updatedAt
+      description: Field to sort the results by (e.g., price, name)
+    ListOrderSortBy:
+      name: listOrderSortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'createdDate'
+        enum:
+          - createdAt
+          - updatedAt
+      description: Field to sort the results by (e.g., createdDate, updatedDate)
+    SortOrder:
+      name: sortOrder
+      in: query
+      required: false
+      schema:
+        type: string
+        example: 'ASC'
+        enum:
+          - ASC
+          - DESC
+      description: Sort order (ascending or descending)
+  securitySchemes:
+    OAuth2Security:
+      type: oauth2
+      description: >-
+        OAuth2 Client Credentials flow. It is required when client requests
+        access to service APIs.
+      flows:
+        clientCredentials:
+          tokenUrl: /oauth2security/oauth2/token
+          scopes:
+            e-commerce: E-commerce Operations Access
+
